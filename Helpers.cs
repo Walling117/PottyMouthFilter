@@ -71,7 +71,7 @@ namespace CurseWordExtractor
             if (!File.Exists(filePath))
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                AnsiConsole.MarkupInterpolated($"\t[bold]Error could not find[/] filePath");
+                AnsiConsole.MarkupLineInterpolated($"\t[bold]Error could not find[/] {Markup.Escape(filePath)}");
                 Console.ResetColor();
                 return badWordList;
             }
@@ -84,15 +84,13 @@ namespace CurseWordExtractor
                     curseWord = curseWord.Trim();
                     if(!string.IsNullOrWhiteSpace(curseWord))
                     badWordList.Add(curseWord.Trim());
-                }
-                AnsiConsole.Write(new Text("\t\tLoaded!", new Style(foreground: Color.Yellow)));
-
+                }               
                 return badWordList;
             }
         }
         public static void CleanUp(string whisperAudioFile, string highQualityAudioFile, string profanityFreeAudioPath)
         {
-            AnsiConsole.MarkupLine("[#DCDCAA]\t---Starting file cleaning---[/]");
+            AnsiConsole.MarkupLine("\n\n[yellow]:large_orange_diamond:[/][bold yellow] Starting file cleaning[/]");
 
             // Put them in an array so you don't have to copy/paste the logic three times
             string[] filesToDelete = { whisperAudioFile, highQualityAudioFile, profanityFreeAudioPath };
@@ -104,18 +102,15 @@ namespace CurseWordExtractor
                     try
                     {
                         File.Delete(file);
-                        AnsiConsole.MarkupLineInterpolated($"[#DCDCAA]\t\t[blue]:small_blue_diamond:[/]Deleted {Markup.Escape(file)}[/]");
+                        AnsiConsole.MarkupLineInterpolated($"\t\t[blue]:small_blue_diamond:[/][bold white]Deleted[/][white] {Markup.Escape(file)}[/]");
                     }
                     catch (Exception ex)
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"\t\t>>>[red bold]Could not delete {file}: {ex.Message}[/]");
-                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                        AnsiConsole.MarkupLineInterpolated($"[bold red]\t\t>>>Could not delete {Markup.Escape(file)}: {Markup.Escape(ex.Message)}[/]");
                     }
                 }
             }
-            AnsiConsole.MarkupLine("[#DCDCAA bold]\tCleanup Complete[/]");
-            Console.ResetColor();
+            AnsiConsole.MarkupLine("[bold white]\t\t[blue]:small_blue_diamond:[/]Cleanup Complete[/]");
         }
         
     }

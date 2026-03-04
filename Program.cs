@@ -37,11 +37,12 @@ namespace CurseWordExtractor
             {
                 await AnsiConsole.Status().Spinner(Spinner.Known.Circle).StartAsync("Booting up PottyMouth filter :)...", async ctx =>
                 {
-
+                    AnsiConsole.MarkupLine("[bold yellow]Loading CurseWords.txt [/]");
                     ctx.Status("[bold yellow]Loading CurseWords.txt[/]");
                     HashSet<string> badWords = Helpers.GetCurseWordList();
+                    AnsiConsole.MarkupLine("\t\t[blue]:small_blue_diamond:[/] CurseWords.txt loaded");
 
-                    ctx.Status("[bold yellow]Extracting 16kHz audio for Whisper...[/]");
+                    ctx.Status("[bold yellow]Extracting 16kHz audio...[/]");
                     whisperAudioFile = ExtractAudio.GetAudio16khz(originalFile);
 
                     // Run Whisper
@@ -59,7 +60,7 @@ namespace CurseWordExtractor
                     Queue<ProfanityMatch> finalSortedMatches = new Queue<ProfanityMatch>(alignedMatches.OrderBy(m => m.Start));
                     string reportFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "Censored_Timestamps.txt");
 
-                    AnsiConsole.MarkupLineInterpolated($"[#DCDCAA]Exporting {finalSortedMatches.Count} timestamps to: {reportFile}[/]");
+                    ctx.Status($"[#DCDCAA]Exporting {finalSortedMatches.Count} timestamps to: {reportFile}[/]");
 
                     using (StreamWriter writer = new StreamWriter(reportFile))
                     {
@@ -92,12 +93,13 @@ namespace CurseWordExtractor
                 // Muxing runs OUTSIDE Status so its Progress bar doesn't conflict
                 Muxer.MuxVideo(originalFile, profanityFreeAudioPath);
 
-                AnsiConsole.MarkupLine("[green] ✔ [/] [green]Profanity filter applied [bold]successfully![/]");
+                AnsiConsole.Write(new Panel(new Markup("[bold #4EC9B0]✔     Profanity filter applied successfully![/]")).Border(BoxBorder.Rounded).BorderColor(Color.Teal).Padding(1, 0, 1, 0));
             }            
             catch (Exception ex) { AnsiConsole.MarkupLineInterpolated($"[#DCDCAA]{Markup.Escape(ex.Message)}[/]"); }
             finally
             {
                 Helpers.CleanUp(whisperAudioFile, highQualityAudioFile, profanityFreeAudioPath);
+                AnsiConsole.MarkupLineInterpolated($"[bold yellow]Potty Mouth Filter finished at [/][underline][white]{DateTime.Now:HH:mm:ss}[/][/]");
             }
 
         }

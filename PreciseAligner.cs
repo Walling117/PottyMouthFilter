@@ -13,7 +13,6 @@ namespace CurseWordExtractor
     {
         public static Queue<ProfanityMatch> AlignTimeStamps(Queue<ProfanityMatch> whisperMatches, string audioFilePath, HashSet<string> badWords, string modelPath = "vosk-model-en-us-0.22")
         {
-            AnsiConsole.MarkupLine("\n\t[bold yellow][underline]\nStarting Precise Aligner via Vosk[/][/]");
 
             var perfectlyAlignedMatches = new Queue<ProfanityMatch>();
 
@@ -124,7 +123,7 @@ namespace CurseWordExtractor
                                     TimeSpan beepStart = preciseStart.Subtract(TimeSpan.FromMilliseconds(200));
                                     TimeSpan beepEnd = preciseEnd.Add(TimeSpan.FromMilliseconds(200));
 
-                                    AnsiConsole.MarkupLineInterpolated($"[green]\t✓ Vosk validated '{Markup.Escape(voskWord)}' | Whisper: {match.Start:hh\\:mm\\:ss\\.fff} -> Vosk: {beepStart:hh\\:mm\\:ss\\.fff}[/]");
+                                    AnsiConsole.MarkupLineInterpolated($"[teal]✔[/] [bold white] Vosk validated:[/][bold red]  '{Markup.Escape(voskWord)}'[/] | [grey](Whisper: {match.Start:hh\\:mm\\:ss\\.fff} [/][teal]→[/][grey] Vosk adjusted to: {beepStart:hh\\:mm\\:ss\\.fff}[/]");
                                     
                                     perfectlyAlignedMatches.Enqueue(new ProfanityMatch
                                     {
@@ -146,9 +145,9 @@ namespace CurseWordExtractor
                     {
                         string fullText = root.GetProperty("text").GetString() ?? "";
 
-                        AnsiConsole.MarkupLineInterpolated($"[#DCDCAA]⚠ Vosk missed — Whisper expected '{Markup.Escape(match.Word)}' at {match.Start:hh\\:mm\\:ss\\.fff}[/]");
-                        AnsiConsole.MarkupInterpolated($"\t[#DCDCAA]   --> Vosk heard: \"{Markup.Escape(fullText)}\"[/]");
-                        AnsiConsole.MarkupLine($"\t[#DCDCAA]   --> FALLING BACK to Whisper's padded timestamp.[/]");
+                        AnsiConsole.MarkupLineInterpolated($"[bold orange3]⚠[/] [bold white] Vosk Missed:[/] [grey]Whisper expected[/] [bold red]'{Markup.Escape(match.Word)}'[/] [grey]at {match.Start:hh\\:mm\\:ss\\.fff}[/]");
+                        AnsiConsole.MarkupLineInterpolated($"\t[grey]└─ Heard:[/] [italic #DCDCAA]\"{Markup.Escape(fullText)}\"[/]");
+                        AnsiConsole.MarkupLine($"\t[grey]└─ Action:[/] [blue]Falling back to Whisper padded timestamp[/]");
 
                         // Vosk missed it (probably due to noise or autocorrecting to "funky").
                         // We use Whisper's original time, but apply a wide 1-second pad 

@@ -10,7 +10,6 @@ namespace CurseWordExtractor
     {
         public static string CensorAudio(Queue<ProfanityMatch> profanityMatches, string inputFile)
         {
-            AnsiConsole.MarkupLine("[ bold #DCDCAA]\n\tStarting to censor Audio directly from raw PCM bytes[/]");
             string tempFolder = Path.GetTempPath(); //  this stores in tempFolder given by OS
             string uniqueFileName = "profanityCensor" + Guid.NewGuid().ToString() + ".wav"; // create unique name via GUI so we dont overrite other temp files
             string outputFile = Path.Combine(tempFolder, uniqueFileName);  // learned 'Combine' helps with cross platorm linux vs windows since both use different \/
@@ -68,7 +67,7 @@ namespace CurseWordExtractor
                     currentBytePosition += bytesRead; // keep track on where we are in the audio track
                 }
 
-                AnsiConsole.MarkupLine("[#DCDCAA]:small_blue_diamond:[/][yellow]\t\t>Successfully Censored audio![/]");
+                AnsiConsole.MarkupLine("\t[blue]:small_blue_diamond:[/][white] Successfully Censored audio![/]");
                 return outputFile;
             }
             catch (Exception ex)

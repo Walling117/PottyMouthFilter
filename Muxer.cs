@@ -9,7 +9,6 @@ namespace CurseWordExtractor
     {
         public static void MuxVideo(string originalVideoPath, string censoredAudioPath)
         {           
-            AnsiConsole.MarkupLine("[#DCDCAA]\tMuxing final video with ProfanityFilter track\n\t\t>This can take a while![/]");
         
             string outputVideoPath = "Censored_Movie.mkv";
 
@@ -59,9 +58,8 @@ namespace CurseWordExtractor
                     {
                         if (!string.IsNullOrEmpty(e.Data) && e.Data.Contains("time="))
                         {
-                            int timeIndex = e.Data.IndexOf("time=") + 5; // leave out "time="
-                            // Safely extract the time portion (usually HH:mm:ss.ff, which is 11 characters)
-                            if (timeIndex + 11 <-e.Data.Length)
+                            int timeIndex = e.Data.IndexOf("time=") + 5;
+                            if (timeIndex + 11 <= e.Data.Length)
                             {
                                 string timeString = e.Data.Substring(timeIndex, 11);
 
@@ -73,11 +71,11 @@ namespace CurseWordExtractor
                            
                         }
                     };
-                });
 
-            process.Start();
-            process.BeginErrorReadLine();
-            process.WaitForExit();
+                    process.Start();
+                    process.BeginErrorReadLine();
+                    process.WaitForExit();
+                });
 
             process.WaitForExit();
 
@@ -88,8 +86,8 @@ namespace CurseWordExtractor
                 return; // Stop execution here. Do NOT proceed to deletion.
             }
 
-            AnsiConsole.MarkupLine("[#DCDCAA]\n\t\t[blue]:small_blue_diamond:[/] Encoding Finished![/]");
-            AnsiConsole.MarkupLine("[#DCDCAA]\t\t[blue]:small_blue_diamond:[/] Swapping files...[/]");
+            AnsiConsole.MarkupLine("\n\t\t[blue]:small_blue_diamond:[/][white] Encoding Finished![/]");
+            AnsiConsole.MarkupLine("\t\t[blue]:small_blue_diamond:[/][white] Attempting to replace old video...[/]");
 
             try
             {
@@ -104,7 +102,7 @@ namespace CurseWordExtractor
                     }
 
                     File.Move(outputVideoPath, originalVideoPath);
-                    AnsiConsole.MarkupLine("\t\t[blue]:small_blue_diamond:[/] Successfully replaced old video!");
+                    AnsiConsole.MarkupLine("\t\t[blue]:small_blue_diamond:[/][white] Successfully replaced old video![/]");
                 }
                 else
                 {

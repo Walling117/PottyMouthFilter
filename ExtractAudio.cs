@@ -24,7 +24,7 @@ namespace CurseWordExtractor
                 process.WaitForExit();
             }
 
-            AnsiConsole.MarkupLine("\n\t\t[blue]:small_blue_diamond:[/]16kHz Audio extraction complete.");
+            AnsiConsole.MarkupLine("\n\n\t\t[blue]:small_blue_diamond:[/]16kHz Audio extraction complete.");
             return outputWavPath;
         }
 
@@ -46,7 +46,7 @@ namespace CurseWordExtractor
                 process.WaitForExit();
             }
 
-            AnsiConsole.MarkupLine("\n\t\t[blue]:small_blue_diamond:[/]High-Quality extraction complete.");
+            AnsiConsole.MarkupLine("\n\n\t[blue]:small_blue_diamond:[/][white] High-Quality extraction complete.[/]");
             return outputWavPath;
         }
     }

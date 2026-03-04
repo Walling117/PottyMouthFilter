@@ -14,10 +14,12 @@ namespace CurseWordExtractor
         {
             var foundMatches = new Queue<ProfanityMatch>();
 
-            AnsiConsole.MarkupLineInterpolated($"\n\t[underline]Loading Model[/]: [bold]{modelPath}[/]");
+            AnsiConsole.MarkupLineInterpolated($"\n\n\t[underline]Loading Model[/]: [bold]{modelPath}[/]");
             using var factory = WhisperFactory.FromPath(modelPath); 
-            AnsiConsole.MarkupLine("\t[dim]Building Processor...[/]");
+            AnsiConsole.MarkupLine("\t\t[blue]:small_blue_diamond:[/] Building Processor...");
             await using var processor = factory.CreateBuilder().WithLanguage("en").WithProbabilities().WithTokenTimestamps().Build();
+            AnsiConsole.MarkupLine("\t\t[blue]:small_blue_diamond:[/] Processor built and loaded");
+
 
             using var reader = new WaveFileReader(whisperAudioFile);
             totalDuration = reader.TotalTime;
@@ -31,8 +33,8 @@ namespace CurseWordExtractor
 
             byte[] buffer = new byte[bytesPerChunk];
 
-            AnsiConsole.MarkupLineInterpolated($"\t\t[yellow]➜[/][white]Audio Duration:[/] {reader.TotalTime}");
-            AnsiConsole.MarkupLineInterpolated($"\t\t[yellow]➜[/][white]Processing in {secondsPerChunk}s chunks with {secondsOverlap}s overlap...[/]\n");
+            AnsiConsole.MarkupLineInterpolated($"\t\t[blue]:small_blue_diamond:[/] Audio Duration: {reader.TotalTime}");
+            AnsiConsole.MarkupLineInterpolated($"\t\t[blue]:small_blue_diamond:[/] Processing in {secondsPerChunk}s chunks with {secondsOverlap}s overlap...\n");
 
             while (reader.Position < reader.Length)
             {
@@ -50,7 +52,7 @@ namespace CurseWordExtractor
 
                 await foreach (var segment in processor.ProcessAsync(pcmData))
                 {
-                    AnsiConsole.MarkupInterpolated($"\r   [dim]➜ \"{segment.Text.Trim()}\"[/]");
+                    AnsiConsole.MarkupLineInterpolated($"\r   [dim]➜ \"{segment.Text.Trim()}\"[/]");
 
                     // Track Previous Token for Merging
                     string prevTokenText = "";
@@ -87,7 +89,7 @@ namespace CurseWordExtractor
                                 matchStart = prevTokenStart; // Use start time of the FIRST part
                                                              // matchEnd is already the end time of the current part
 
-                                AnsiConsole.MarkupLineInterpolated($"\n[magenta]   ➜ [bold]SPLIT DETECTED[/]: '{prevTokenText}' + '{currentText}' = '{matchWord}'[/]");
+                                AnsiConsole.MarkupLineInterpolated($"\r   [#569CD6]❯[/] [bold white]Split Detected:[/] [grey]'{Markup.Escape(prevTokenText)}'[/] [teal]+[/] [grey]'{Markup.Escape(currentText)}'[/] [teal]→[/] [bold red]'{Markup.Escape(matchWord)}'[/]");
                             }
                         }
 
@@ -113,14 +115,14 @@ namespace CurseWordExtractor
                             if ((actualEnd - actualStart).TotalSeconds > maxDurationSeconds)
                             {
                                 actualEnd = actualStart.Add(TimeSpan.FromSeconds(maxDurationSeconds));
-                                AnsiConsole.MarkupLineInterpolated($"\n[yellow]   ➜ [bold]LENGTH CAPPED[/]: '{matchWord}' duration reduced to 2s[/]");
+                                AnsiConsole.MarkupLineInterpolated($"\r   [#CE9178]❯[/] [bold white]Length Capped:[/] [grey]'{Markup.Escape(matchWord)}' duration reduced to[/] [bold yellow]2.0s[/]");
                             }
 
                             TimeSpan beepStart = actualStart.Subtract(TimeSpan.FromMilliseconds(200));
                             TimeSpan beepEnd = actualEnd.Add(TimeSpan.FromMilliseconds(400));
                             if (beepStart < TimeSpan.Zero) beepStart = TimeSpan.Zero;
 
-                            AnsiConsole.MarkupLineInterpolated($"\n[red]   ➜ [bold]BADWORD FOUND[/]: '{matchWord}' at {actualStart}[/]");
+                            AnsiConsole.MarkupLineInterpolated($"\r   [bold #F44747]❯[/] [bold white]Potty word found:[/] [bold #F44747]'{Markup.Escape(matchWord)}'[/] [grey]at[/] [underline #DCDCAA]{actualStart:hh\\:mm\\:ss\\.fff}[/]");
 
                             foundMatches.Enqueue(new ProfanityMatch
                             {
