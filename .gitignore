@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+
+vosk-model-en-us-0.22/
+ggml-large-v3.bin
+ggml-large-v3-turbo.bin
+ggml-medium.en.bin
+ggml-small.en.bin
