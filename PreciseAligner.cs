@@ -11,6 +11,9 @@ namespace CurseWordExtractor
 {
     internal static class PreciseAligner
     {
+        public static int voskValidatedCounter = 0;
+        public static int voskFailCounter = 0;
+
         public static Queue<ProfanityMatch> AlignTimeStamps(Queue<ProfanityMatch> whisperMatches, string audioFilePath, HashSet<string> badWords, string modelPath = "vosk-model-en-us-0.22")
         {
 
@@ -47,8 +50,8 @@ namespace CurseWordExtractor
                 long endByte = (long)(windowEnd.TotalSeconds * bytesPerSecond);
 
                 // CRITICAL C# AUDIO MATH: Block Alignment!!!!!!!!!!!!!!
-                // A 16-bit audio sample is 2 bytes long. If we accidentally start reading on an odd number 
-                // (like byte 1001), we slice a sound wave in half, which creates horrible static and crashes Vosk.
+                // EX: A 16-bit audio sample is 2 bytes long. If we accidentally start reading on an odd number 
+                // (like byte 1001), we slice a sound wave in half, which creates horrible static and have bad result for Vosk.
                 // This forces our start and end points to snap to the nearest even boundary.
                 startByte -= startByte % reader.WaveFormat.BlockAlign;
                 endByte -= endByte % reader.WaveFormat.BlockAlign;
@@ -124,7 +127,7 @@ namespace CurseWordExtractor
                                     TimeSpan beepEnd = preciseEnd.Add(TimeSpan.FromMilliseconds(200));
 
                                     AnsiConsole.MarkupLineInterpolated($"[teal]✔[/] [bold white] Vosk validated:[/][bold red]  '{Markup.Escape(voskWord)}'[/] | [grey](Whisper: {match.Start:hh\\:mm\\:ss\\.fff} [/][teal]→[/][grey] Vosk adjusted to: {beepStart:hh\\:mm\\:ss\\.fff}[/]");
-                                    
+                                    voskValidatedCounter++;
                                     perfectlyAlignedMatches.Enqueue(new ProfanityMatch
                                     {
                                         Word = match.Word,
@@ -140,7 +143,7 @@ namespace CurseWordExtractor
                         }
                     }
 
-                    // 2. Move the Fallback OUTSIDE the check
+                    // Move the Fallback OUTSIDE the check
                     if (!wordConfirmed)
                     {
                         string fullText = root.GetProperty("text").GetString() ?? "";
@@ -148,10 +151,10 @@ namespace CurseWordExtractor
                         AnsiConsole.MarkupLineInterpolated($"[bold orange3]⚠[/] [bold white] Vosk Missed:[/] [grey]Whisper expected[/] [bold red]'{Markup.Escape(match.Word)}'[/] [grey]at {match.Start:hh\\:mm\\:ss\\.fff}[/]");
                         AnsiConsole.MarkupLineInterpolated($"\t[grey]└─ Heard:[/] [italic #DCDCAA]\"{Markup.Escape(fullText)}\"[/]");
                         AnsiConsole.MarkupLine($"\t[grey]└─ Action:[/] [blue]Falling back to Whisper padded timestamp[/]");
-
+                        voskFailCounter++;
                         // Vosk missed it (probably due to noise or autocorrecting to "funky").
-                        // We use Whisper's original time, but apply a wide 1-second pad 
-                        // to act as a "safety net" against Whisper's time drift.
+                        // use Whisper's original time, but apply 1-second pad 
+                        // to act as a safety net against Whisper time drift.
                         TimeSpan fallbackStart = match.Start.Subtract(TimeSpan.FromSeconds(1));
                         TimeSpan fallbackEnd = match.End.Add(TimeSpan.FromSeconds(1));
 
@@ -170,9 +173,13 @@ namespace CurseWordExtractor
                 {
                     AnsiConsole.MarkupLineInterpolated($"[bold red]✗ Error:[/] Error reading JSON --> {Markup.Escape(ex.Message)}");
                 }
-
             }
-
+            var chart = new BarChart();
+            chart.Label = ("[bold underline][yellow] Vosk hits and misses[/][/]");
+            chart.AddItem("[bold white]Hits[/]", voskValidatedCounter, Color.Green);
+            chart.AddItem("[bold white]Misses[/]", voskFailCounter, Color.Orange1);
+            AnsiConsole.Write("\n\n\n");
+            AnsiConsole.Write(chart);
             return perfectlyAlignedMatches;
         } 
     }

@@ -22,6 +22,10 @@ namespace CurseWordExtractor
             Console.InputEncoding = System.Text.Encoding.UTF8;
             Console.Clear();
 
+            var bestTitleEver = new FigletText("Potty Mouth Filter") { Color = Color.Yellow , Justification = Justify.Center};
+            ;
+            AnsiConsole.Write(bestTitleEver);
+
             if (args.Length == 0 || (!File.Exists(args[0]))) // check user argument
             {
                 AnsiConsole.MarkupLineInterpolated($"[bold red]✗ Error:[/] Please enter a valid file path!");
@@ -39,7 +43,8 @@ namespace CurseWordExtractor
                 {
                     AnsiConsole.MarkupLine("[bold yellow]Loading CurseWords.txt [/]");
                     ctx.Status("[bold yellow]Loading CurseWords.txt[/]");
-                    HashSet<string> badWords = Helpers.GetCurseWordList();
+                    // Get Curse Word List
+                    HashSet<string> badWords = Helpers.GetCurseWordList(); 
                     AnsiConsole.MarkupLine("\t\t[blue]:small_blue_diamond:[/] CurseWords.txt loaded");
 
                     ctx.Status("[bold yellow]Extracting 16kHz audio...[/]");

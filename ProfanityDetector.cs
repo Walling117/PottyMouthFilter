@@ -24,49 +24,51 @@ namespace CurseWordExtractor
             using var reader = new WaveFileReader(whisperAudioFile);
             totalDuration = reader.TotalTime;
 
-            int secondsPerChunk = 30;
-            int secondsOverlap = 1;
+            int secondsPerChunk = 30; // Reset Whisper after 30 seconds to get new context window
+            int secondsOverlap = 1; // Because of this 1 second overlap, duplicates words can and do occur
 
+            // seconds to byte conversion
             int bytesPerSecond = reader.WaveFormat.AverageBytesPerSecond;
             int bytesPerChunk = bytesPerSecond * secondsPerChunk;
             int bytesOverlap = bytesPerSecond * secondsOverlap;
 
+            // setup wheelbarrow
             byte[] buffer = new byte[bytesPerChunk];
 
             AnsiConsole.MarkupLineInterpolated($"\t\t[blue]:small_blue_diamond:[/] Audio Duration: {reader.TotalTime}");
             AnsiConsole.MarkupLineInterpolated($"\t\t[blue]:small_blue_diamond:[/] Processing in {secondsPerChunk}s chunks with {secondsOverlap}s overlap...\n");
 
-            while (reader.Position < reader.Length)
+            while (reader.Position < reader.Length) // loop through until all the data has been read
             {
                 TimeSpan currentChunkStartTime = reader.CurrentTime;
                 int bytesRead = reader.Read(buffer, 0, buffer.Length);
-                if (bytesRead == 0) break;
+                if (bytesRead == 0) break; // if no bytes were read, we are done
 
-                int sampleCount = bytesRead / 2;
+                int sampleCount = bytesRead / 2; // divide by 2 cause audio is 16-bit (each audio sample = 2 bytes). Ex: 1000 bytes = 500 samples
                 float[] pcmData = new float[sampleCount];
                 for (int i = 0; i < sampleCount; i++)
                 {
                     short sample = BitConverter.ToInt16(buffer, i * 2);
-                    pcmData[i] = sample / 32768.0f;
+                    pcmData[i] = sample / 32768.0f; // pulse code modulation = standard method used to tigitally represent analog signals. The lowest level
                 }
 
-                await foreach (var segment in processor.ProcessAsync(pcmData))
+                await foreach (var segment in processor.ProcessAsync(pcmData)) //  For each sentence do this...
                 {
                     AnsiConsole.MarkupLineInterpolated($"\r   [dim]➜ \"{segment.Text.Trim()}\"[/]");
 
-                    // Track Previous Token for Merging
+                    // Track Previous Token in case a word merge is needed
                     string prevTokenText = "";
                     TimeSpan prevTokenStart = TimeSpan.Zero;
                   
 
-                    foreach (var token in segment.Tokens)
+                    foreach (var token in segment.Tokens) // For each word do this...
                     {
                         string currentText = token.Text;
                         string cleanedCurrent = Helpers.RemovePunctuation(currentText);
 
                         bool matchFound = false;
                         string matchWord = "";
-                        TimeSpan matchStart = TimeSpan.FromMilliseconds(token.Start * 10);
+                        TimeSpan matchStart = TimeSpan.FromMilliseconds(token.Start * 10); // multiply by 10 because whisper uses centiseconds
                         TimeSpan matchEnd = TimeSpan.FromMilliseconds(token.End * 10);
 
                         // Check INDIVIDUAL Token
@@ -76,7 +78,7 @@ namespace CurseWordExtractor
                             matchWord = cleanedCurrent;
                         }
                         // Check MERGED Token (Previous + Current)
-                        //    Example: "fu" + "cker" = "fucker"
+                        //    Example: "fu" + "cker" = "f*cker"
                         else
                         {
                             string mergedRaw = prevTokenText + currentText;
@@ -89,7 +91,7 @@ namespace CurseWordExtractor
                                 matchStart = prevTokenStart; // Use start time of the FIRST part
                                                              // matchEnd is already the end time of the current part
 
-                                AnsiConsole.MarkupLineInterpolated($"\r   [#569CD6]❯[/] [bold white]Split Detected:[/] [grey]'{Markup.Escape(prevTokenText)}'[/] [teal]+[/] [grey]'{Markup.Escape(currentText)}'[/] [teal]→[/] [bold red]'{Markup.Escape(matchWord)}'[/]");
+                                AnsiConsole.MarkupLineInterpolated($"\r   [#569CD6]❯[/] [bold white]Split Detected:[/][grey]'{Markup.Escape(prevTokenText)}'[/] [teal]+[/] [grey]'{Markup.Escape(currentText)}'[/] [teal]→[/] [bold red]'{Markup.Escape(matchWord)}'[/]");
                             }
                         }
 
@@ -107,10 +109,8 @@ namespace CurseWordExtractor
                                 continue;
                             }
 
-
-
                             // If Whisper claims the word took longer than 1.5 seconds, cap it.
-                            // This prevents loud noises from dragging out a mute forever.
+                            // This prevents loud noises from dragging out a mute forever. Ex: Car chases with loud noises
                             double maxDurationSeconds = 2;
                             if ((actualEnd - actualStart).TotalSeconds > maxDurationSeconds)
                             {
@@ -141,7 +141,7 @@ namespace CurseWordExtractor
 
                 if (reader.Position < reader.Length)
                 {
-                    reader.Position -= bytesOverlap;
+                    reader.Position = reader.Position - bytesOverlap;
                 }
             }
 

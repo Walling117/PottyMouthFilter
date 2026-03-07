@@ -33,8 +33,15 @@ namespace CurseWordExtractor
             {
                 var next = sorted[i];
 
-                // Overlap Check: Do these words start within 500 milliseconds of each other?
-                bool isDuplicateEvent = Math.Abs((next.Start - current.Start).TotalMilliseconds) < 500;
+                // Overlap Check Do these words start within 500 milliseconds of each other?
+                bool isCloseInTime = Math.Abs((next.Start - current.Start).TotalMilliseconds) < 500; // 500 milliseconds is 
+
+                // Only treat as a duplicate if it's also the same word (or a substring match)
+                bool isSameWord = string.Equals(current.Word, next.Word, StringComparison.OrdinalIgnoreCase)
+                               || current.Word.Contains(next.Word, StringComparison.OrdinalIgnoreCase)
+                               || next.Word.Contains(current.Word, StringComparison.OrdinalIgnoreCase);
+
+                bool isDuplicateEvent = isCloseInTime && isSameWord;
 
                 if (isDuplicateEvent)
                 {
@@ -70,9 +77,7 @@ namespace CurseWordExtractor
 
             if (!File.Exists(filePath))
             {
-                Console.ForegroundColor = ConsoleColor.Red;
                 AnsiConsole.MarkupLineInterpolated($"\t[bold]Error could not find[/] {Markup.Escape(filePath)}");
-                Console.ResetColor();
                 return badWordList;
             }
             using (StreamReader curseWordsReader = new StreamReader(filePath))

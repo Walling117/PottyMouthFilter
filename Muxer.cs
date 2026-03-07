@@ -53,7 +53,7 @@ namespace CurseWordExtractor
 
             AnsiConsole.Progress().Start(ctx =>
                 {
-                    var encodingTask = ctx.AddTask("[blue]Encoding media...[/]", maxValue: totalDurationSeconds);
+                    var encodingTask = ctx.AddTask("[blue]Inserting audio track into media...[/]", maxValue: totalDurationSeconds);
                     process.ErrorDataReceived += (sender, e) =>
                     {
                         if (!string.IsNullOrEmpty(e.Data) && e.Data.Contains("time="))
