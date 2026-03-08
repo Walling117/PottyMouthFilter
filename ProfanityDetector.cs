@@ -44,13 +44,7 @@ namespace CurseWordExtractor
                 int bytesRead = reader.Read(buffer, 0, buffer.Length);
                 if (bytesRead == 0) break; // if no bytes were read, we are done
 
-                int sampleCount = bytesRead / 2; // divide by 2 cause audio is 16-bit (each audio sample = 2 bytes). Ex: 1000 bytes = 500 samples
-                float[] pcmData = new float[sampleCount];
-                for (int i = 0; i < sampleCount; i++)
-                {
-                    short sample = BitConverter.ToInt16(buffer, i * 2);
-                    pcmData[i] = sample / 32768.0f; // pulse code modulation = standard method used to tigitally represent analog signals. The lowest level
-                }
+                float[] pcmData = ConvertBytesToPcm(buffer, bytesRead);
 
                 await foreach (var segment in processor.ProcessAsync(pcmData)) //  For each sentence do this...
                 {
@@ -59,82 +53,27 @@ namespace CurseWordExtractor
                     // Track Previous Token in case a word merge is needed
                     string prevTokenText = "";
                     TimeSpan prevTokenStart = TimeSpan.Zero;
-                  
 
                     foreach (var token in segment.Tokens) // For each word do this...
                     {
-                        string currentText = token.Text;
-                        string cleanedCurrent = Helpers.RemovePunctuation(currentText);
+                        var result = CheckToken(token.Text, prevTokenText, prevTokenStart,
+                            TimeSpan.FromMilliseconds(token.Start * 10),
+                            TimeSpan.FromMilliseconds(token.End * 10),
+                            badWords);
 
-                        bool matchFound = false;
-                        string matchWord = "";
-                        TimeSpan matchStart = TimeSpan.FromMilliseconds(token.Start * 10); // multiply by 10 because whisper uses centiseconds
-                        TimeSpan matchEnd = TimeSpan.FromMilliseconds(token.End * 10);
-
-                        // Check INDIVIDUAL Token
-                        if (badWords.Contains(cleanedCurrent))
+                        if (result.Found)
                         {
-                            matchFound = true;
-                            matchWord = cleanedCurrent;
-                        }
-                        // Check MERGED Token (Previous + Current)
-                        //    Example: "fu" + "cker" = "f*cker"
-                        else
-                        {
-                            string mergedRaw = prevTokenText + currentText;
-                            string mergedClean = Helpers.RemovePunctuation(mergedRaw);
+                            var match = TryCreateMatch(result.Word, result.Start, result.End,
+                                currentChunkStartTime, token.Probability,
+                                secondsPerChunk, secondsOverlap,
+                                reader.Position, reader.Length);
 
-                            if (badWords.Contains(mergedClean))
-                            {
-                                matchFound = true;
-                                matchWord = mergedClean;
-                                matchStart = prevTokenStart; // Use start time of the FIRST part
-                                                             // matchEnd is already the end time of the current part
-
-                                AnsiConsole.MarkupLineInterpolated($"\r   [#569CD6]❯[/] [bold white]Split Detected:[/][grey]'{Markup.Escape(prevTokenText)}'[/] [teal]+[/] [grey]'{Markup.Escape(currentText)}'[/] [teal]→[/] [bold red]'{Markup.Escape(matchWord)}'[/]");
-                            }
-                        }
-
-                        if (matchFound)
-                        {
-                            TimeSpan relativeStart = matchStart;
-                            TimeSpan relativeEnd = matchEnd;
-
-                            TimeSpan actualStart = currentChunkStartTime.Add(relativeStart);
-                            TimeSpan actualEnd = currentChunkStartTime.Add(relativeEnd);
-
-                            // Overlap safety check
-                            if (relativeStart.TotalSeconds > (secondsPerChunk - secondsOverlap) && reader.Position < reader.Length)
-                            {
-                                continue;
-                            }
-
-                            // If Whisper claims the word took longer than 1.5 seconds, cap it.
-                            // This prevents loud noises from dragging out a mute forever. Ex: Car chases with loud noises
-                            double maxDurationSeconds = 2;
-                            if ((actualEnd - actualStart).TotalSeconds > maxDurationSeconds)
-                            {
-                                actualEnd = actualStart.Add(TimeSpan.FromSeconds(maxDurationSeconds));
-                                AnsiConsole.MarkupLineInterpolated($"\r   [#CE9178]❯[/] [bold white]Length Capped:[/] [grey]'{Markup.Escape(matchWord)}' duration reduced to[/] [bold yellow]2.0s[/]");
-                            }
-
-                            TimeSpan beepStart = actualStart.Subtract(TimeSpan.FromMilliseconds(200));
-                            TimeSpan beepEnd = actualEnd.Add(TimeSpan.FromMilliseconds(400));
-                            if (beepStart < TimeSpan.Zero) beepStart = TimeSpan.Zero;
-
-                            AnsiConsole.MarkupLineInterpolated($"\r   [bold #F44747]❯[/] [bold white]Potty word found:[/] [bold #F44747]'{Markup.Escape(matchWord)}'[/] [grey]at[/] [underline #DCDCAA]{actualStart:hh\\:mm\\:ss\\.fff}[/]");
-
-                            foundMatches.Enqueue(new ProfanityMatch
-                            {
-                                Word = matchWord,
-                                Confidence = token.Probability,
-                                Start = beepStart,
-                                End = beepEnd
-                            });
+                            if (match is not null)
+                                foundMatches.Enqueue(match);
                         }
 
                         // Store current as previous for the next loop
-                        prevTokenText = currentText;
+                        prevTokenText = token.Text;
                         prevTokenStart = TimeSpan.FromMilliseconds(token.Start * 10);
                     }
                 }
@@ -146,6 +85,94 @@ namespace CurseWordExtractor
             }
 
             return foundMatches;
+        }
+
+        
+        // Converts raw 16-bit audio bytes into a float[] array for Whisper.
+        // Each 2-byte pair becomes one normalized PCM sample between -1.0 and 1.0.
+        
+        private static float[] ConvertBytesToPcm(byte[] buffer, int bytesRead)
+        {
+            int sampleCount = bytesRead / 2; // divide by 2 cause audio is 16-bit (each audio sample = 2 bytes). Ex: 1000 bytes = 500 samples
+            float[] pcmData = new float[sampleCount];
+            for (int i = 0; i < sampleCount; i++)
+            {
+                short sample = BitConverter.ToInt16(buffer, i * 2);
+                pcmData[i] = sample / 32768.0f; // pulse code modulation = standard method used to digitally represent analog signals. The lowest level
+            }
+            return pcmData;
+        }
+
+        
+        // Checks if the current token (or a merge of previous + current) matches a bad word.
+        // Returns whether a match was found, along with the matched word and its time range.
+        
+        private static (bool Found, string Word, TimeSpan Start, TimeSpan End) CheckToken(
+            string currentText, string prevTokenText, TimeSpan prevTokenStart,
+            TimeSpan tokenStart, TimeSpan tokenEnd, HashSet<string> badWords)
+        {
+            string cleanedCurrent = Helpers.RemovePunctuation(currentText);
+
+            // Check INDIVIDUAL Token
+            if (badWords.Contains(cleanedCurrent))
+            {
+                return (true, cleanedCurrent, tokenStart, tokenEnd);
+            }
+
+            // Check MERGED Token (Previous + Current)
+            //    Example: "fu" + "cker" = "f*cker"
+            string mergedRaw = prevTokenText + currentText;
+            string mergedClean = Helpers.RemovePunctuation(mergedRaw);
+
+            if (badWords.Contains(mergedClean))
+            {
+                AnsiConsole.MarkupLineInterpolated($"\r   [#569CD6]❯[/] [bold white]Split Detected:[/][grey]'{Markup.Escape(prevTokenText)}'[/] [teal]+[/] [grey]'{Markup.Escape(currentText)}'[/] [teal]→[/] [bold red]'{Markup.Escape(mergedClean)}'[/]");
+                return (true, mergedClean, prevTokenStart, tokenEnd); // Use start time of the FIRST part
+            }
+
+            return (false, "", TimeSpan.Zero, TimeSpan.Zero);
+        }
+
+        
+        // Validates a detected match against overlap and duration rules, applies padding,
+        //and returns a ProfanityMatch or null if the match should be skipped.
+        
+        private static ProfanityMatch? TryCreateMatch(string matchWord, TimeSpan matchStart, TimeSpan matchEnd,
+            TimeSpan chunkStartTime, float confidence,
+            int secondsPerChunk, int secondsOverlap,
+            long readerPosition, long readerLength)
+        {
+            TimeSpan actualStart = chunkStartTime.Add(matchStart);
+            TimeSpan actualEnd = chunkStartTime.Add(matchEnd);
+
+            // Overlap safety check
+            if (matchStart.TotalSeconds > (secondsPerChunk - secondsOverlap) && readerPosition < readerLength)
+            {
+                return null;
+            }
+
+            // If Whisper claims the word took longer than 1.5 seconds, cap it.
+            // This prevents loud noises from dragging out a mute forever. Ex: Car chases with loud noises
+            double maxDurationSeconds = 2;
+            if ((actualEnd - actualStart).TotalSeconds > maxDurationSeconds)
+            {
+                actualEnd = actualStart.Add(TimeSpan.FromSeconds(maxDurationSeconds));
+                AnsiConsole.MarkupLineInterpolated($"\r   [#CE9178]❯[/] [bold white]Length Capped:[/] [grey]'{Markup.Escape(matchWord)}' duration reduced to[/] [bold yellow]2.0s[/]");
+            }
+
+            TimeSpan beepStart = actualStart.Subtract(TimeSpan.FromMilliseconds(200));
+            TimeSpan beepEnd = actualEnd.Add(TimeSpan.FromMilliseconds(400));
+            if (beepStart < TimeSpan.Zero) beepStart = TimeSpan.Zero;
+
+            AnsiConsole.MarkupLineInterpolated($"\r   [bold #F44747]❯[/] [bold white]Potty word found:[/] [bold #F44747]'{Markup.Escape(matchWord)}'[/] [grey]at[/] [underline #DCDCAA]{actualStart:hh\\:mm\\:ss\\.fff}[/]");
+
+            return new ProfanityMatch
+            {
+                Word = matchWord,
+                Confidence = confidence,
+                Start = beepStart,
+                End = beepEnd
+            };
         }
     }
 }

@@ -35,7 +35,7 @@ namespace CurseWordExtractor
             {
 
                 // the audio is 16,000Hz
-                using var recognizer = new VoskRecognizer(model, 16000.0f); // create it fresh with each loop to reset stopwatch
+                using var recognizer = new VoskRecognizer(model, 16000.0f); // create it fresh with each loop to reset  VOsk stopwatch
                 recognizer.SetWords(true); // please output words
 
                 
