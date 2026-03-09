@@ -14,7 +14,7 @@ My wife and I realized we needed a way to enjoy our favorite shows and movies wi
 
 ## Features
 
-* **Hybrid AI Alignment:** Whisper identifies the content, and Vosk refines the timestamps.
+* **Pairing two AI models:** Whisper identifies the content, and Vosk refines the timestamps.
 * **Audio Muting:** Instead of just lowering volume, it manipulates raw 16-bit PCM bytes to ensure absolute silence during profanity.
 * **Deduplication:** Logic to handle overlapping detections and "merged tokens" (catching "fu" + "cker" as one event).
 * **CLI:** Powered by `Spectre.Console` for real-time progress bars, status updates, and hit/miss charts.
