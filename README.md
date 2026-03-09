@@ -77,6 +77,7 @@ Sometimes Whisper detects a word that Vosk simply can't find. For example, Whisp
 When Vosk can't confirm a word, PottyMouth falls back to Whisper's (slightly padded) timestamp as a safety net.
 
 The Merged Token problem.
+
 <img width="390" height="15" alt="image" src="https://github.com/user-attachments/assets/226ff821-479e-48ef-a0e1-e3c3e1e62c1a" />
 
 Sometimes Whisper splits a single bad word into two tokens. 
