@@ -59,9 +59,10 @@ Simply run the executable and pass the path to your video file:
 ```
 
 🧠 Things I Learned the Hard Way:
+
 [!TIP]
 Context window Problem: Whisper has a small context limit of around 30 seconds. In my testing, I was feeding it small audios. Eventually I fed it a 2 hour audio and it started 
-halunicating saying "Thank you!". It was a humorous way to learn that I should be feeding it smaller chunks of audio.
+hallucinating saying "Thank you!". It was a humorous way to learn that I should be feeding it smaller chunks of audio.
 
 [!IMPORTANT]
 16-bit audio has a block alignment rule.
