@@ -7,7 +7,7 @@ By combining **OpenAI's Whisper** with the millisecond-precision of **Vosk**, it
 ---
 
 ## 📖 The "Why"
-I host a **Jellyfin** server for my family to enjoy our personal media collection. Recently, my daughter has started repeating words she hears. 
+FAMILY FIRST! I host a **Jellyfin** server for my family to enjoy our personal media collection. Recently, my daughter has started repeating words she hears. 
 My wife and I realized we needed a way to enjoy our favorite shows and movies without worrying about "colorful" language being added to our daughter's vocabulary.
 
 ---
