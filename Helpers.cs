@@ -46,7 +46,7 @@ namespace CurseWordExtractor
                 if (isDuplicateEvent)
                 {
                     // If they are duplicates, keep the one with the higher confidence score
-                    // or the one that is a longer word (e.g., "fucking" beats "fuck")
+                    // or the one that is a longer word ("fucking" beats "fuck")
                     if (next.Word.Length > current.Word.Length)
                     {
                         current = next;
@@ -97,7 +97,7 @@ namespace CurseWordExtractor
         {
             AnsiConsole.MarkupLine("\n\n[yellow]:large_orange_diamond:[/][bold yellow] Starting file cleaning[/]");
 
-            // Put them in an array so you don't have to copy/paste the logic three times
+            
             string[] filesToDelete = { whisperAudioFile, highQualityAudioFile, profanityFreeAudioPath };
 
             foreach (string file in filesToDelete)

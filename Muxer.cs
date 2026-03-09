@@ -22,7 +22,7 @@ namespace CurseWordExtractor
      $"-err_detect ignore_err -i \"{originalVideoPath}\" " +
      $"-i \"{censoredAudioPath}\" " +
      "-map 0:v -map 1:a:0 -map 0:s? " +
-     "-vf format=yuv420p " +        // ← converts 10-bit to 8-bit for AMF
+     "-vf format=yuv420p " +        // converts 10-bit to 8-bit for AMF
      "-c:v h264_amf " +
      "-quality balanced " +
      "-rc cqp -qp_i 20 -qp_p 22 " +

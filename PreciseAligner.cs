@@ -76,7 +76,7 @@ namespace CurseWordExtractor
                     using JsonDocument doc = JsonDocument.Parse(jsonResult);
                     JsonElement root = doc.RootElement;
 
-                    // 1. Declare this OUTSIDE the check
+                    // Declare this OUTSIDE the check
                     bool wordConfirmed = false;
 
                     if (root.TryGetProperty("result", out JsonElement resultElement))

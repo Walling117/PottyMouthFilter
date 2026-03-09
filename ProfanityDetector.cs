@@ -32,7 +32,7 @@ namespace CurseWordExtractor
             int bytesPerChunk = bytesPerSecond * secondsPerChunk;
             int bytesOverlap = bytesPerSecond * secondsOverlap;
 
-            // setup wheelbarrow
+            // setup wheelbarrow of data
             byte[] buffer = new byte[bytesPerChunk];
 
             AnsiConsole.MarkupLineInterpolated($"\t\t[blue]:small_blue_diamond:[/] Audio Duration: {reader.TotalTime}");
