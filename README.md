@@ -55,7 +55,7 @@ Before running PottyMouth, make sure you have:
 Simply run the executable and pass the path to your video file:
 
 ```bash
-./PottyMouth.exe "C:\Videos\ActionMovie.mkv"
+./CurseWordExtractor.exe "C:\Videos\ActionMovie.mkv"
 ```
 
 🧠 Things I Learned the Hard Way:
