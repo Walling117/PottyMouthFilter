@@ -75,6 +75,8 @@ The ggml-small model paired with Vosk's timestamp refinement ended up being the 
 Vosk isn't perfect and that's okay.
 Sometimes Whisper detects a word that Vosk simply can't find. For example, Whisper hears the F-bomb, but Vosk processes the audio and transcribes it as "buck in".
 When Vosk can't confirm a word, PottyMouth falls back to Whisper's (slightly padded) timestamp as a safety net.
+<img width="1099" height="116" alt="image" src="https://github.com/user-attachments/assets/1080fd56-c380-4831-bfe0-b4cd589221ef" />
+
 
 The Merged Token problem.
 
