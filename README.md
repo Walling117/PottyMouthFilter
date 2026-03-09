@@ -25,7 +25,7 @@ My wife and I realized we needed a way to enjoy our favorite shows and movies wi
 1.  **Extracting the Audio:** FFmpeg extracts two versions—a 16kHz mono stream for the AI models and a high-quality stream for the final product.
 2.  **Broad Detection (Whisper):** The app chunks audio into 30-second windows. `Whisper.net` scans these for "Potty Words" defined in `CurseWords.txt`.
 3.  **Precise Alignment (Vosk):** For every word Whisper finds, the app creates a 10-second search window around it. Vosk then scans to find the exact start and end points.
-4.  **The "Janitor" Loop:** The `AudioProcessor` reads the high-quality audio. When it hits a timestamp from the queue, it flips the 16-bit PCM samples to `0` (creating silence) until the word is over.
+4.  **Muting:** The `AudioProcessor` reads the high-quality audio. When it hits a timestamp from the queue, it flips the 16-bit PCM samples to `0` (creating silence) until the word is over.
 5.  **Stitching it back together:** The cleaned audio is re-attached to the original video using FFmpeg.
 <img width="1446" height="736" alt="Screenshot 2026-03-09 124953" src="https://github.com/user-attachments/assets/9d7e7124-3b9a-4ad6-9aa1-bef1873985b5" />
 
