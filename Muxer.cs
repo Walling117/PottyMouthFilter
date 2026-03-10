@@ -16,26 +16,25 @@ namespace CurseWordExtractor
             if (File.Exists(outputVideoPath)) File.Delete(outputVideoPath);
 
             string ffmpegArgs =
-     "-analyzeduration 100M -probesize 100M " +
-     "-hwaccel d3d11va " +
-     "-fix_sub_duration " +
-     $"-err_detect ignore_err -i \"{originalVideoPath}\" " +
-     $"-i \"{censoredAudioPath}\" " +
-     "-map 0:v -map 1:a:0 -map 0:s? " +
-     "-vf format=yuv420p " +        // converts 10-bit to 8-bit for AMF
-     "-c:v h264_amf " +
-     "-quality balanced " +
-     "-rc cqp -qp_i 20 -qp_p 22 " +
-     "-c:a:0 ac3 -b:a:0 640k " +
-     "-c:s copy " +
-     "-start_at_zero " +
-     "-max_muxing_queue_size 4096 " +
-     "-max_interleave_delta 0 " +
-     "-af aresample=async=1000 " +
-     "-movflags +faststart " +
-     "-metadata:s:a:0 title=\"ProfanityFilter\" " +
-     "-disposition:a:0 default " +
-     $"\"{outputVideoPath}\"";
+    "-analyzeduration 100M -probesize 100M " +
+    "-fix_sub_duration " +
+    $"-err_detect ignore_err -i \"{originalVideoPath}\" " +
+    $"-i \"{censoredAudioPath}\" " +
+    "-map 0:v -map 1:a:0 -map 0:s? " +
+    "-vf format=yuv420p " +        // Ensures maximum color format compatibility
+    "-c:v libx264 " +              // Universal software video encoder
+    "-preset medium " +            // Universal speed/compression tradeoff
+    "-crf 22 " +                   // Universal quality setting
+    "-c:a:0 aac -b:a:0 320k " +    // Switched to AAC for maximum device/browser compatibility
+    "-c:s copy " +
+    "-start_at_zero " +
+    "-max_muxing_queue_size 4096 " +
+    "-max_interleave_delta 0 " +
+    "-af aresample=async=1000 " +
+    "-movflags +faststart " +
+    "-metadata:s:a:0 title=\"ProfanityFilter\" " +
+    "-disposition:a:0 default " +
+    $"\"{outputVideoPath}\"";
 
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
